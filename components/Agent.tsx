@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
 import {interviewer} from "@/constants";
@@ -75,21 +74,33 @@ const Agent = ({
     };
   }, []);
 
-    const handleGenerateFeedback = async (messages: SavedMessage[]) => {
-      console.log("Generate feedback here");
-      
-      const { success, id} = {
-        success: true,
-        id: 'feedback-id'
-      }
-      
-      if(success && id) {
-        router.push(`/interview/${interviewId}/feedback/${id}`);
-      }else{
-        console.log("Error generating feedback");
+  const handleGenerateFeedback = async (messages: SavedMessage[]) => {
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interviewId,
+          userId,
+          transcript: messages
+        }),
+      });
+  
+      const { success, feedbackId } = await response.json();
+  
+      if (success && feedbackId) {
+        router.push(`/interview/${interviewId}/feedback`);
+      } else {
+        console.error("Failed to create feedback");
         router.push("/");
       }
-    };
+    } catch (error) {
+      console.error("Feedback error:", error);
+      router.push("/error");
+    }
+  };
 
     useEffect(() => {
       if(callStatus === CallStatus.FINISHED) {
